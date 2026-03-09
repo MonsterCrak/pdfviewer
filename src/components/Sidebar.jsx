@@ -20,7 +20,7 @@ export default function Sidebar() {
 
   return (
     <nav className="sidebar">
-      <div className="sidebar-logo">P</div>
+      <div className="sidebar-logo">PDF</div>
       <div className="sidebar-nav">
         {navItems.map(item => (
           <button

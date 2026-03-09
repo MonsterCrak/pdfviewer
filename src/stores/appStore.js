@@ -26,6 +26,10 @@ const useAppStore = create((set, get) => ({
     set({ theme: next });
   },
 
+  // --- Auth ---
+  user: null,
+  setUser: (user) => set({ user }),
+
   // --- Navigation ---
   currentView: 'dashboard', // dashboard | viewer | comparison | collections
   setView: (view) => set({ currentView: view }),
