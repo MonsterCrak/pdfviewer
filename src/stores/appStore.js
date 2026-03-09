@@ -74,8 +74,8 @@ const useAppStore = create((set, get) => ({
   setActiveCollection: (id) => set({ activeCollectionId: id }),
 
   // --- Viewer ---
-  openTabs: [], // [{ id, name, fileHandle, pdfDoc, currentPage, totalPages }]
-  activeTabId: null,
+  openTabs: JSON.parse(localStorage.getItem('lfph-opentabs') || '[]'),
+  activeTabId: localStorage.getItem('lfph-activetab') || null,
   activeTool: null,       // 'highlight' | 'sticky' | 'draw' | null
   activeColor: '#DDD6FE', // lilac default
   rightPanelOpen: true,
@@ -85,17 +85,18 @@ const useAppStore = create((set, get) => ({
   openFileInViewer: (tab) => {
     const tabs = get().openTabs;
     const existing = tabs.find(t => t.id === tab.id);
+    let newTabs, newActiveId;
     if (existing) {
-      // If it exists but we click it from Dashboard again, guarantee it resets to Page 1
-      get().updateTab(tab.id, { currentPage: 1 });
-      set({ activeTabId: tab.id, currentView: 'viewer' });
+      newTabs = tabs.map(t => t.id === tab.id ? { ...t, ...tab, currentPage: 1 } : t);
+      newActiveId = tab.id;
     } else {
-      set({
-        openTabs: [...tabs, { ...tab, currentPage: 1 }],
-        activeTabId: tab.id,
-        currentView: 'viewer',
-      });
+      newTabs = [...tabs, { ...tab, currentPage: 1 }];
+      newActiveId = tab.id;
     }
+    set({ openTabs: newTabs, activeTabId: newActiveId, currentView: 'viewer' });
+    const minTabs = newTabs.map(t => ({ id: t.id, name: t.name, currentPage: t.currentPage, totalPages: t.totalPages }));
+    localStorage.setItem('lfph-opentabs', JSON.stringify(minTabs));
+    localStorage.setItem('lfph-activetab', newActiveId);
   },
   closeTab: (tabId) => {
     const tabs = get().openTabs.filter(t => t.id !== tabId);
@@ -103,17 +104,21 @@ const useAppStore = create((set, get) => ({
       ? (tabs.length > 0 ? tabs[tabs.length - 1].id : null)
       : get().activeTabId;
     set({ openTabs: tabs, activeTabId: activeId });
-    if (tabs.length === 0) {
-      set({ currentView: 'dashboard' });
-    }
+    if (tabs.length === 0) set({ currentView: 'dashboard' });
+    
+    const minTabs = tabs.map(t => ({ id: t.id, name: t.name, currentPage: t.currentPage, totalPages: t.totalPages }));
+    localStorage.setItem('lfph-opentabs', JSON.stringify(minTabs));
+    localStorage.setItem('lfph-activetab', activeId || '');
   },
-  setActiveTab: (tabId) => set({ activeTabId: tabId }),
+  setActiveTab: (tabId) => {
+    set({ activeTabId: tabId });
+    localStorage.setItem('lfph-activetab', tabId);
+  },
   updateTab: (tabId, updates) => {
-    set({
-      openTabs: get().openTabs.map(t =>
-        t.id === tabId ? { ...t, ...updates } : t
-      ),
-    });
+    const newTabs = get().openTabs.map(t => t.id === tabId ? { ...t, ...updates } : t);
+    set({ openTabs: newTabs });
+    const minTabs = newTabs.map(t => ({ id: t.id, name: t.name, currentPage: t.currentPage, totalPages: t.totalPages }));
+    localStorage.setItem('lfph-opentabs', JSON.stringify(minTabs));
   },
 
   setActiveTool: (tool) => set({ activeTool: get().activeTool === tool ? null : tool }),

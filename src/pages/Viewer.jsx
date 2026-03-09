@@ -2,7 +2,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import useAppStore from '../stores/appStore';
 import useTranslation from '../hooks/useTranslation';
 import AiPanel from '../components/AiPanel';
-import { renderPage, renderThumbnail } from '../services/pdfService';
+import { renderPage, renderThumbnail, loadPdfDocument } from '../services/pdfService';
+import { readFileAsArrayBuffer, requestPermission } from '../services/fileSystemService';
+import * as db from '../services/indexedDBService';
 
 const HIGHLIGHT_COLORS = [
   { name: 'Lilac', value: '#DDD6FE' },
@@ -28,6 +30,7 @@ export default function Viewer() {
   const loadAnnotations = useAppStore(s => s.loadAnnotations);
   const removeAnnotation = useAppStore(s => s.removeAnnotation);
   const setView = useAppStore(s => s.setView);
+  const showToast = useAppStore(s => s.showToast);
   const { t } = useTranslation();
 
   const [scale, setScale] = useState(1.0);
@@ -182,6 +185,50 @@ export default function Viewer() {
           <h3>{t('noDocOpen')}</h3>
           <button className="btn btn-primary" onClick={() => setView('dashboard')} style={{ marginTop: 16 }}>
             {t('goToDashboard')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleRestoreSession = async () => {
+    try {
+      const fileRow = await db.getFile(activeTab.id);
+      if (!fileRow || !fileRow._handle) {
+        showToast('Please re-open this file from the Dashboard.', 'error');
+        return;
+      }
+
+      // If it's a native handle, verify/request permission (requires this user click)
+      if (fileRow._handle.requestPermission) {
+        const granted = await requestPermission(fileRow._handle);
+        if (!granted) throw new Error('Permission denied');
+      }
+
+      const buffer = await readFileAsArrayBuffer(fileRow._handle);
+      const pdfDoc = await loadPdfDocument(buffer);
+
+      updateTab(activeTab.id, {
+        pdfDoc,
+        arrayBuffer: buffer,
+        totalPages: pdfDoc.numPages
+      });
+    } catch (e) {
+      showToast('Error restoring document: ' + e.message, 'error');
+    }
+  };
+
+  if (activeTab && !activeTab.pdfDoc) {
+    return (
+      <div className="app-content">
+        <div className="empty-state" style={{ height: '100%' }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>♻️</div>
+          <h3>Session Restored</h3>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 24 }}>
+            Click below to reload <strong>{activeTab.name}</strong> securely.
+          </p>
+          <button className="btn btn-primary" onClick={handleRestoreSession}>
+            Reload Document
           </button>
         </div>
       </div>

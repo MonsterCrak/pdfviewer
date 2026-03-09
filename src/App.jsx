@@ -68,7 +68,20 @@ export default function App() {
       <div className="app-main">
         {currentView !== 'viewer' && (
           <div className="app-topbar">
-            <span style={{ fontWeight: 600, fontSize: 16 }}>{viewTitle[currentView]}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>{viewTitle[currentView]}</span>
+              <div 
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: 6, 
+                  padding: '4px 12px', background: 'var(--color-primary-lighter)', 
+                  color: 'var(--color-primary)', borderRadius: 'var(--radius-full)', 
+                  fontSize: 12, fontWeight: 500 
+                }}
+                title="Current Storage"
+              >
+                <span>💾 {t('localStorage')}</span>
+              </div>
+            </div>
             <SearchBar />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button className="btn btn-icon btn-ghost" title={t('notifications')}>🔔</button>

@@ -10,7 +10,8 @@ const translations = {
     // Top bar
     searchPlaceholder: 'Search documents…',
     notifications: 'Notifications',
-
+    localStorage: 'Local Storage',
+    
     // Dashboard
     welcomeTitle: 'Welcome to PDF Hub 👋',
     welcomeSubtitle: 'Your documents are safe, private, and local. Connect a folder to get started.',
@@ -74,6 +75,10 @@ const translations = {
     andMore: (n) => `...and ${n} more`,
     documentA: 'Document A',
     documentB: 'Document B',
+    diffModeModalTitle: 'Page-by-Page Comparison',
+    diffModeModalDesc: 'The differences are calculated and displayed on a per-page basis. Make sure you are viewing the corresponding pages in both documents.',
+    dontShowAgain: 'Don\'t show this again',
+    gotIt: 'Got it',
 
     // Collections
     allDocuments: 'All Documents',
@@ -112,6 +117,7 @@ const translations = {
     // Barra superior
     searchPlaceholder: 'Buscar documentos…',
     notifications: 'Notificaciones',
+    localStorage: 'Almacenamiento Local',
 
     // Dashboard
     welcomeTitle: 'Bienvenido a PDF Hub 👋',
@@ -176,6 +182,10 @@ const translations = {
     andMore: (n) => `...y ${n} más`,
     documentA: 'Documento A',
     documentB: 'Documento B',
+    diffModeModalTitle: 'Comparación por Hoja',
+    diffModeModalDesc: 'Las diferencias se calculan y muestran hoja por hoja. Asegúrate de estar visualizando las páginas correspondientes en ambos documentos.',
+    dontShowAgain: 'No volver a mostrar',
+    gotIt: 'Entendido',
 
     // Colecciones
     allDocuments: 'Todos los Documentos',
