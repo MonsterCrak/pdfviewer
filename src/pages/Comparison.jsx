@@ -19,6 +19,36 @@ function diffText(textA, textB) {
   return result;
 }
 
+/**
+ * Compare all pages between two documents
+ * Returns: { removed: { pageNum: [words] }, added: { pageNum: [words] }, pagesWithDiffs: [pageNums] }
+ */
+async function computeFullDiff(leftDoc, rightDoc) {
+  const result = {
+    removed: {},
+    added: {},
+    pagesWithDiffs: []
+  };
+
+  if (!leftDoc?.doc || !rightDoc?.doc) return result;
+
+  const maxPages = Math.max(leftDoc.doc.numPages, rightDoc.doc.numPages);
+
+  for (let page = 1; page <= maxPages; page++) {
+    const leftText = await getTextContent(leftDoc.doc, page).catch(() => '');
+    const rightText = await getTextContent(rightDoc.doc, page).catch(() => '');
+    const diff = diffText(leftText, rightText);
+
+    if (diff.removed.length > 0 || diff.added.length > 0) {
+      result.removed[page] = diff.removed;
+      result.added[page] = diff.added;
+      result.pagesWithDiffs.push(page);
+    }
+  }
+
+  return result;
+}
+
 const ComparisonPage = React.forwardRef(({ pdfDoc, pageNum, scale }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -60,12 +90,16 @@ const ComparisonPage = React.forwardRef(({ pdfDoc, pageNum, scale }, ref) => {
   );
 });
 
-function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setCurrentPage, diffWords, diffType }) {
+function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setCurrentPage, diffByPage, diffType, pagesWithDiffs, totalDiffs }) {
   const [scale] = useState(1.0);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedDiffPage, setSelectedDiffPageState] = useState(null);
   const { t } = useTranslation();
   const pageRefs = useRef({});
   const initialLoadDone = useRef(false);
+
+  // Initialize selected page when pagesWithDiffs becomes available
+  const effectiveSelectedPage = selectedDiffPage || pagesWithDiffs?.[0] || null;
 
   useEffect(() => {
     if (!pdfDoc || !paneRef.current) return;
@@ -188,7 +222,7 @@ function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setC
         )}
       </div>
 
-      {diffWords && diffWords.length > 0 && (
+      {diffByPage && pagesWithDiffs && pagesWithDiffs.length > 0 && (
         <div style={{
           position: 'absolute',
           top: 64,
@@ -203,7 +237,7 @@ function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setC
           zIndex: 10,
           overflow: 'hidden',
         }}>
-          {/* Resumen compacto */}
+          {/* Resumen compacto con contador total */}
           <div style={{
             padding: '8px 12px',
             display: 'flex',
@@ -214,13 +248,13 @@ function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setC
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <strong>{diffType === 'added' ? t('newWords') : t('removedWords')}</strong>
               <span style={{
-                background: diffType === 'added' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.15)',
+                background: 'rgba(0,0,0,0.15)',
                 padding: '2px 8px',
                 borderRadius: 'var(--radius-full)',
                 fontSize: 12,
                 fontWeight: 600,
               }}>
-                {diffWords.length}
+                {totalDiffs} {t('inPages', pagesWithDiffs.length)}
               </span>
             </div>
             <button style={{
@@ -238,34 +272,75 @@ function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setC
             </button>
           </div>
 
-          {/* Panel de detalles expandido */}
+          {/* Panel de detalles expandido - separado por páginas */}
           {showDetails && (
             <div style={{
-              padding: '12px',
               borderTop: '1px solid rgba(0,0,0,0.1)',
-              maxHeight: 300,
+              maxHeight: 350,
               overflow: 'auto',
               background: 'rgba(255,255,255,0.5)',
             }}>
+              {/* Selector de páginas con diferencias */}
               <div style={{
+                padding: '8px 12px',
                 display: 'flex',
-                flexWrap: 'wrap',
                 gap: 6,
+                flexWrap: 'wrap',
+                borderBottom: '1px solid rgba(0,0,0,0.1)',
+                background: 'rgba(255,255,255,0.3)',
               }}>
-                {diffWords.map((word, i) => (
-                  <span key={i} style={{
-                    background: diffType === 'added'
-                      ? 'rgba(16, 185, 129, 0.2)'
-                      : 'rgba(239, 68, 68, 0.2)',
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                  }}>
-                    {word}
-                  </span>
-                ))}
+                {pagesWithDiffs.map(pageNum => {
+                  const count = diffByPage[pageNum]?.length || 0;
+                  const isSelected = effectiveSelectedPage === pageNum;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setSelectedDiffPageState(pageNum)}
+                      style={{
+                        background: isSelected
+                          ? (diffType === 'added' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)')
+                          : 'transparent',
+                        border: `1px solid ${isSelected ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)'}`,
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '4px 10px',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        fontWeight: isSelected ? 600 : 400,
+                      }}
+                    >
+                      {t('page')} {pageNum} ({count})
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Palabras de la página seleccionada */}
+              {effectiveSelectedPage && diffByPage[effectiveSelectedPage] && (
+                <div style={{ padding: 12 }}>
+                  <div style={{ marginBottom: 8, fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>
+                    {t('differencesInPage', effectiveSelectedPage)}:
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                  }}>
+                    {diffByPage[effectiveSelectedPage].map((word, i) => (
+                      <span key={i} style={{
+                        background: diffType === 'added'
+                          ? 'rgba(16, 185, 129, 0.25)'
+                          : 'rgba(239, 68, 68, 0.25)',
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                      }}>
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -341,19 +416,17 @@ export default function Comparison() {
 
 // Sync page numbers are handled by IntersectionObserver during syncScroll.
 
-  // Compute diff
+  // Compute full document diff (all pages)
   useEffect(() => {
     if (!diffMode || !leftDoc?.doc || !rightDoc?.doc) {
       return;
     }
     const compute = async () => {
-      const leftText = await getTextContent(leftDoc.doc, leftPage);
-      const rightText = await getTextContent(rightDoc.doc, rightPage);
-      const result = diffText(leftText, rightText);
+      const result = await computeFullDiff(leftDoc, rightDoc);
       setDiffResult(result);
     };
     compute();
-  }, [diffMode, leftDoc, rightDoc, leftPage, rightPage]);
+  }, [diffMode, leftDoc, rightDoc]);
 
   return (
     <div className="comparison-layout" style={{ height: '100%' }}>
@@ -381,7 +454,9 @@ export default function Comparison() {
           paneRef={leftPaneRef}
           currentPage={leftPage}
           setCurrentPage={setLeftPage}
-          diffWords={diffMode ? diffResult?.removed : null}
+          diffByPage={diffMode ? diffResult?.removed : null}
+          pagesWithDiffs={diffMode ? diffResult?.pagesWithDiffs : null}
+          totalDiffs={diffMode ? (diffResult?.removed ? Object.values(diffResult.removed).reduce((sum, arr) => sum + arr.length, 0) : 0) : 0}
           diffType="removed"
         />
         <ComparisonPane
@@ -391,7 +466,9 @@ export default function Comparison() {
           paneRef={rightPaneRef}
           currentPage={rightPage}
           setCurrentPage={setRightPage}
-          diffWords={diffMode ? diffResult?.added : null}
+          diffByPage={diffMode ? diffResult?.added : null}
+          pagesWithDiffs={diffMode ? diffResult?.pagesWithDiffs : null}
+          totalDiffs={diffMode ? (diffResult?.added ? Object.values(diffResult.added).reduce((sum, arr) => sum + arr.length, 0) : 0) : 0}
           diffType="added"
         />
       </div>

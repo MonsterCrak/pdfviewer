@@ -81,6 +81,9 @@ const translations = {
     gotIt: 'Got it',
     showDetails: 'Show details',
     hideDetails: 'Hide details',
+    inPages: 'in',
+    page: 'Page',
+    differencesInPage: 'Differences in this page',
 
     // Collections
     allDocuments: 'All Documents',
@@ -222,6 +225,9 @@ const translations = {
     gotIt: 'Entendido',
     showDetails: 'Ver detalles',
     hideDetails: 'Ocultar detalles',
+    inPages: 'en',
+    page: 'Página',
+    differencesInPage: 'Diferencias en esta página',
 
     // Colecciones
     allDocuments: 'Todos los Documentos',
