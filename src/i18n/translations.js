@@ -79,6 +79,8 @@ const translations = {
     diffModeModalDesc: 'The differences are calculated and displayed on a per-page basis. Make sure you are viewing the corresponding pages in both documents.',
     dontShowAgain: 'Don\'t show this again',
     gotIt: 'Got it',
+    showDetails: 'Show details',
+    hideDetails: 'Hide details',
 
     // Collections
     allDocuments: 'All Documents',
@@ -218,6 +220,8 @@ const translations = {
     diffModeModalDesc: 'Las diferencias se calculan y muestran hoja por hoja. Asegúrate de estar visualizando las páginas correspondientes en ambos documentos.',
     dontShowAgain: 'No volver a mostrar',
     gotIt: 'Entendido',
+    showDetails: 'Ver detalles',
+    hideDetails: 'Ocultar detalles',
 
     // Colecciones
     allDocuments: 'Todos los Documentos',

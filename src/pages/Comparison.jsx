@@ -62,6 +62,7 @@ const ComparisonPage = React.forwardRef(({ pdfDoc, pageNum, scale }, ref) => {
 
 function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setCurrentPage, diffWords, diffType }) {
   const [scale] = useState(1.0);
+  const [showDetails, setShowDetails] = useState(false);
   const { t } = useTranslation();
   const pageRefs = useRef({});
   const initialLoadDone = useRef(false);
@@ -190,23 +191,83 @@ function ComparisonPane({ label, onDocLoaded, pdfDoc, paneRef, currentPage, setC
       {diffWords && diffWords.length > 0 && (
         <div style={{
           position: 'absolute',
-          top: 64, /* Changed from bottom to top so it's clearly visible */
+          top: 64,
           left: '50%',
           transform: 'translateX(-50%)',
           width: '80%',
-          padding: 12,
           background: diffType === 'added' ? 'var(--color-diff-add)' : 'var(--color-diff-remove)',
           border: `1px solid ${diffType === 'added' ? 'var(--color-diff-add-border)' : 'var(--color-diff-remove-border)'}`,
           borderRadius: 'var(--radius-sm)',
           boxShadow: 'var(--shadow-lg)',
           fontSize: 13,
-          maxHeight: 150,
-          overflow: 'auto',
           zIndex: 10,
+          overflow: 'hidden',
         }}>
-          <strong>{diffType === 'added' ? t('newWords') : t('removedWords')}</strong>{' '}
-          {diffWords.slice(0, 40).join(', ')}
-          {diffWords.length > 40 && ` ${t('andMore', diffWords.length - 40)}`}
+          {/* Resumen compacto */}
+          <div style={{
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+          }} onClick={() => setShowDetails(!showDetails)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <strong>{diffType === 'added' ? t('newWords') : t('removedWords')}</strong>
+              <span style={{
+                background: diffType === 'added' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.15)',
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-full)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}>
+                {diffWords.length}
+              </span>
+            </div>
+            <button style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              color: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+              {showDetails ? t('hideDetails') : t('showDetails')}
+              <span style={{ fontSize: 10 }}>{showDetails ? '▲' : '▼'}</span>
+            </button>
+          </div>
+
+          {/* Panel de detalles expandido */}
+          {showDetails && (
+            <div style={{
+              padding: '12px',
+              borderTop: '1px solid rgba(0,0,0,0.1)',
+              maxHeight: 300,
+              overflow: 'auto',
+              background: 'rgba(255,255,255,0.5)',
+            }}>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+              }}>
+                {diffWords.map((word, i) => (
+                  <span key={i} style={{
+                    background: diffType === 'added'
+                      ? 'rgba(16, 185, 129, 0.2)'
+                      : 'rgba(239, 68, 68, 0.2)',
+                    padding: '2px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  }}>
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
