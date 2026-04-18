@@ -36,7 +36,7 @@ export default function Collections() {
   useEffect(() => {
     loadCollections();
     loadFiles();
-  }, []);
+  }, [loadCollections, loadFiles]);
 
   const handleCreateCollection = () => {
     if (!newName.trim()) return;

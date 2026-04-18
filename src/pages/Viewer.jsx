@@ -96,6 +96,8 @@ export default function Viewer() {
       }
     );
 
+    const visibilityMapCurrent = visibilityMap.current;
+
     const timer = setTimeout(() => {
       Object.keys(pageRefs.current).forEach(pageNum => {
         const el = pageRefs.current[pageNum];
@@ -106,9 +108,9 @@ export default function Viewer() {
     return () => {
       observer.disconnect();
       clearTimeout(timer);
-      visibilityMap.current.clear();
+      visibilityMapCurrent.clear();
     };
-  }, [activeTabId, activeTab?.id, updateTab, activeTab?.currentPage]);
+  }, [activeTabId, activeTab, updateTab, activeTab?.currentPage]);
 
   // Ensure Page 1 is shown at top
   useEffect(() => {
@@ -149,7 +151,7 @@ export default function Viewer() {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [activeTabId]); // Only on tab switch
+  }, [activeTabId, activeTab]); // Only on tab switch
 
   const handlePageChange = useCallback((pageNum) => {
     if (!activeTab) return;

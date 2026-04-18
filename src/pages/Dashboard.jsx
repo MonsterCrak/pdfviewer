@@ -159,7 +159,7 @@ export default function Dashboard() {
               currentPage: 1,
               totalPages: doc.numPages,
             });
-          } catch (err) {
+          } catch {
             showToast(t('errorLoadingDropped'), 'error');
           }
         }
